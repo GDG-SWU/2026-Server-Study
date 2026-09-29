@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BlogApplication" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.example.blog.BlogApplication" />
+    <module name="blog-api-practice.main" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

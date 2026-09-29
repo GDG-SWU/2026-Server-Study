@@ -1,13 +1,11 @@
-package com.example.server_study_2026;
+package com.example.blog;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ServerStudy2026Application {
-
+public class BlogApplication {
     public static void main(String[] args) {
-        SpringApplication.run(ServerStudy2026Application.class, args);
+        SpringApplication.run(BlogApplication.class, args);
     }
-
 }
