@@ -19,13 +19,13 @@ public class BookController {
 
     private final BookService bookService;
 
-    @Operation(summary="도서 목록 조회", description = "전체 도서를 조회합니다.")
+    @Operation(summary="도서 목록 조회", description = "전체 도서를 조회합니다. isBorrowed 값으로 대출 여부를 필터링 할 수 있습니다.")
     @GetMapping
-    public List<BookResponse> findAll() {
-        return bookService.findAll();
+    public List<BookResponse> findAll(@RequestParam(required = false) Boolean isBorrowed) {
+        return bookService.findAll(isBorrowed);
     }
 
-    @Operation(summary="도서 단권 조회", description = "해당 아이디의 도서를 조회합니다.")
+    @Operation(summary="도서 단건 조회", description = "해당 아이디의 도서를 조회합니다.")
     @GetMapping("/{id}")
     public BookResponse findById(@PathVariable Long id) {
         return bookService.findById(id);

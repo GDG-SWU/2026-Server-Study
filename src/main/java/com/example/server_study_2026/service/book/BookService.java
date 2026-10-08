@@ -17,7 +17,12 @@ public class BookService {
 
     private final BookRepository bookRepository;
 
-    public List<BookResponse> findAll() {
+
+    public List<BookResponse> findAll(Boolean isBorrowed) {
+        List<Book> books = (isBorrowed == null)
+                ? bookRepository.findAll() //GET /books에서 isBorrowed = null이면 전체조회
+                : bookRepository.findByIsBorrowed(isBorrowed); //아니면 Repository의 findByIsBorrowed를 따라서 조회
+
         return bookRepository.findAll().stream()
                 .map(BookResponse::from)
                 .toList();
