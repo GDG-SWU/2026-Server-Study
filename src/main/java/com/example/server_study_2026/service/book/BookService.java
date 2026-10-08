@@ -34,6 +34,12 @@ public class BookService {
         return BookResponse.from(book);
     }
 
+    public List<BookResponse> findByTitle(String title) {
+        return bookRepository.findByTitleContaining(title).stream()
+                .map(BookResponse::from)
+                .toList();
+    }
+
     @Transactional
     public BookResponse create(BookCreateRequest request) {
         Book book = Book.builder()

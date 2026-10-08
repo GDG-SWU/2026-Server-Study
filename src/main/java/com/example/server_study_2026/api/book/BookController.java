@@ -31,6 +31,10 @@ public class BookController {
         return bookService.findById(id);
     }
 
+    @Operation(summary="제목으로 도서 조회", description = "제목에 검색어가 포함된 도서를 조회합니다.")
+    @GetMapping("/search")
+    public List<BookResponse> findByTitle(@RequestParam String title) { return bookService.findByTitle(title); }
+
     @Operation(summary="도서 등록")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
