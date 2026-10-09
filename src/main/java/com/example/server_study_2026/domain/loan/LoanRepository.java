@@ -10,5 +10,5 @@ public interface LoanRepository extends JpaRepository<Loan, Long>{
     List<Loan> findByReturnDateIsNull();
 
     // 특정 유저의 대출 이력 조회
-    List<Loan> findByStudentId(Long userId);
+    List<Loan> findByStudentId(Long studentId);
 }
