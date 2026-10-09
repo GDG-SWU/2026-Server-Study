@@ -1,0 +1,233 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "checkedAt": "2026-10-09T21:26:30.016Z",
+  "results": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "status": 201,
+      "response": {
+        "id": 1,
+        "email": "sua-1791581182821@example.com",
+        "createdAt": "2026-10-10T06:26:23.4343164"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "status": 409,
+      "response": {
+        "status": 409,
+        "message": "이미 등록된 이메일입니다."
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/books",
+      "status": 201,
+      "response": {
+        "id": 1,
+        "title": "자바의 정석",
+        "author": "남궁성",
+        "isBorrowed": false
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans",
+      "status": 201,
+      "response": {
+        "id": 1,
+        "userId": 1,
+        "bookId": 1,
+        "loanDate": "2026-10-10",
+        "dueDate": "2026-10-24",
+        "returnDate": null
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/books/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "title": "자바의 정석",
+        "author": "남궁성",
+        "isBorrowed": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans",
+      "status": 409,
+      "response": {
+        "status": 409,
+        "message": "이미 대출 중인 도서입니다. bookId=1"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/loans",
+      "status": 200,
+      "response": [
+        {
+          "id": 1,
+          "userId": 1,
+          "bookId": 1,
+          "loanDate": "2026-10-10",
+          "dueDate": "2026-10-24",
+          "returnDate": null
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/loans/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "userId": 1,
+        "bookId": 1,
+        "loanDate": "2026-10-10",
+        "dueDate": "2026-10-24",
+        "returnDate": null
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/loans/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "userId": 1,
+        "bookId": 1,
+        "loanDate": "2026-10-10",
+        "dueDate": "2026-10-24",
+        "returnDate": "2026-10-10"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/books/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "title": "자바의 정석",
+        "author": "남궁성",
+        "isBorrowed": false
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/loans/1",
+      "status": 409,
+      "response": {
+        "status": 409,
+        "message": "이미 반납한 대출입니다. id=1"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/loans",
+      "status": 201,
+      "response": {
+        "id": 2,
+        "userId": 1,
+        "bookId": 1,
+        "loanDate": "2026-10-10",
+        "dueDate": "2026-10-24",
+        "returnDate": null
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/loans/1",
+      "status": 204,
+      "response": null
+    },
+    {
+      "method": "GET",
+      "path": "/books/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "title": "자바의 정석",
+        "author": "남궁성",
+        "isBorrowed": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/loans/2",
+      "status": 204,
+      "response": null
+    },
+    {
+      "method": "GET",
+      "path": "/books/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "title": "자바의 정석",
+        "author": "남궁성",
+        "isBorrowed": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/loans/1",
+      "status": 404,
+      "response": {
+        "status": 404,
+        "message": "대출가 없습니다. id=1"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "status": 200,
+      "response": [
+        {
+          "id": 1,
+          "email": "sua-1791581182821@example.com",
+          "createdAt": "2026-10-10T06:26:23.434316"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/users/1",
+      "status": 200,
+      "response": {
+        "id": 1,
+        "email": "sua-1791581182821@example.com",
+        "createdAt": "2026-10-10T06:26:23.434316"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/books",
+      "status": 200,
+      "response": [
+        {
+          "id": 1,
+          "title": "자바의 정석",
+          "author": "남궁성",
+          "isBorrowed": false
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/books/1",
+      "status": 204,
+      "response": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/1",
+      "status": 204,
+      "response": null
+    }
+  ]
+}

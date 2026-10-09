@@ -1,0 +1,25 @@
+Table user {
+  id bigint [pk, increment, note: '회원 고유 번호']
+  email varchar(100) [not null, unique, note: '회원 이메일']
+  password varchar(255) [not null, note: '비밀번호 (구현에서는 PBKDF2 해시 저장)']
+  created_at datetime [note: '회원 가입 일시']
+}
+
+Table book {
+  id bigint [pk, increment, note: '도서 고유 번호']
+  title varchar(255) [not null, note: '도서 제목']
+  author varchar(255) [not null, note: '저자']
+  is_borrowed boolean [not null, default: false, note: '현재 대출 여부']
+}
+
+Table loan {
+  id bigint [pk, increment, note: '대출 고유 번호']
+  user_id bigint [not null, note: '대출한 회원 번호']
+  book_id bigint [not null, note: '대출한 도서 번호']
+  loan_date date [not null, note: '대출일']
+  due_date date [not null, note: '반납 예정일: 대출일로부터 14일 뒤']
+  return_date date [null, note: '실제 반납일: 미반납이면 NULL']
+}
+
+Ref: loan.user_id > user.id
+Ref: loan.book_id > book.id
