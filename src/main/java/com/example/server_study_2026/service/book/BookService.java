@@ -4,6 +4,8 @@ import com.example.server_study_2026.api.book.dto.BookCreateRequest;
 import com.example.server_study_2026.api.book.dto.BookResponse;
 import com.example.server_study_2026.domain.book.Book;
 import com.example.server_study_2026.domain.book.BookRepository;
+import com.example.server_study_2026.global.exception.BusinessException;
+import com.example.server_study_2026.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,7 @@ public class BookService {
 
     public BookResponse findById(Long id) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("도서가 없습니다. id=" + id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
         return BookResponse.from(book);
     }
 
@@ -53,6 +55,9 @@ public class BookService {
 
     @Transactional
     public void delete(Long id) {
+        if(!bookRepository.existsById(id)) {
+            throw new BusinessException(ErrorCode.BOOK_NOT_FOUND);
+        }
         bookRepository.deleteById(id);
     }
 }
