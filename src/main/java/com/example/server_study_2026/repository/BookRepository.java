@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByTitleContaining(String keyword);
+    List<Book> findByIsBorrowedFalse(); // 대출 가능한 도서만 조회
 }
