@@ -6,6 +6,7 @@ import com.example.server_study_2026.global.response.ApiResponse;
 import com.example.server_study_2026.service.book.BookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class BookController {
     @Operation(summary="도서 등록")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<BookResponse> create(@RequestBody BookCreateRequest request) {
+    public ApiResponse<BookResponse> create(@Valid @RequestBody BookCreateRequest request) {
         return ApiResponse.ok(bookService.create(request));
     }
 

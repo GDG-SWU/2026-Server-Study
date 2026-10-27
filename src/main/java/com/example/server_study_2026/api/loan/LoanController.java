@@ -7,6 +7,7 @@ import com.example.server_study_2026.global.response.ApiResponse;
 import com.example.server_study_2026.service.loan.LoanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class LoanController {
     @Operation(summary = "대출 신청", description = "해당 도서를 대출합니다.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<LoanResponse> create(@RequestBody LoanCreateRequest loan) {
+    public ApiResponse<LoanResponse> create(@Valid @RequestBody LoanCreateRequest loan) {
         return ApiResponse.ok(loanService.create(loan));
     }
 
