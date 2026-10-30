@@ -5,6 +5,10 @@ import com.example.server_study_2026.domain.Loan;
 import com.example.server_study_2026.domain.User;
 import com.example.server_study_2026.dto.LoanCreateRequest;
 import com.example.server_study_2026.dto.LoanResponse;
+
+import com.example.server_study_2026.global.exception.BusinessException;
+import com.example.server_study_2026.global.exception.ErrorCode;
+
 import com.example.server_study_2026.repository.BookRepository;
 import com.example.server_study_2026.repository.LoanRepository;
 import com.example.server_study_2026.repository.UserRepository;
@@ -36,7 +40,8 @@ public class LoanService {
                 .orElseThrow(() -> new IllegalArgumentException("도서가 없습니다. id=" + request.bookId()));
 
         if (book.isBorrowed()) {
-            throw new IllegalStateException("이미 대출 중인 도서입니다. id=" + request.bookId());
+//            throw new IllegalStateException("이미 대출 중인 도서입니다. id=" + request.bookId());
+            throw new BusinessException(ErrorCode.ALREADY_BORROWED);
         }
 
         book.borrow();
