@@ -13,6 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,5 +31,6 @@ public class User extends BaseEntity {
     public User(String email, String password) {
         this.email = email;
         this.password = password;
+        this.role = Role.USER;
     }
 }
