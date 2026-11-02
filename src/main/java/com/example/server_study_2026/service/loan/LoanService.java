@@ -28,8 +28,8 @@ public class LoanService {
 
     //도서 대출 신청
     @Transactional
-    public LoanResponse create(LoanCreateRequest request) {
-        User user = userRepository.findById(request.userId())
+    public LoanResponse create(Long userId, LoanCreateRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Book book = bookRepository.findById(request.bookId())
@@ -65,9 +65,14 @@ public class LoanService {
 
     //도서 반납 처리
     @Transactional
-    public LoanResponse returnBook(Long id) {
+    public LoanResponse returnBook(Long userId, Long id) {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOAN_NOT_FOUND));
+
+        //남의 대출은 반납 불가능
+        if (!loan.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
 
         if(loan.getReturnDate() != null) {
             throw new BusinessException(ErrorCode.LOAN_ALREADY_RETURNED);
