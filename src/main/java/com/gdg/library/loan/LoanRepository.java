@@ -3,8 +3,11 @@ package com.gdg.library.loan;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import java.util.Optional;
+import java.util.List;
 
 public interface LoanRepository extends JpaRepository<Loan, Long> {
+    List<Loan> findByUserId(Long userId);
+
     boolean existsByUserId(Long userId);
     boolean existsByBookId(Long bookId);
 

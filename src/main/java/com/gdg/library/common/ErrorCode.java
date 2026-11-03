@@ -1,0 +1,33 @@
+package com.gdg.library.common;
+
+import org.springframework.http.HttpStatus;
+
+public enum ErrorCode {
+    BOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "도서를 찾을 수 없습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+    LOAN_NOT_FOUND(HttpStatus.NOT_FOUND, "대출 내역을 찾을 수 없습니다."),
+    BOOK_ALREADY_BORROWED(HttpStatus.CONFLICT, "이미 대출 중인 도서입니다."),
+    LOAN_ALREADY_RETURNED(HttpStatus.CONFLICT, "이미 반납한 대출입니다."),
+    BOOK_HAS_LOANS(HttpStatus.CONFLICT, "대출 기록이 있는 도서는 삭제할 수 없습니다."),
+    USER_HAS_LOANS(HttpStatus.CONFLICT, "대출 기록이 있는 회원은 삭제할 수 없습니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 등록된 이메일입니다."),
+    DATA_CONFLICT(HttpStatus.CONFLICT, "데이터 충돌로 요청을 처리할 수 없습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+
+    private final HttpStatus status;
+    private final String message;
+
+    ErrorCode(HttpStatus status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
+    public HttpStatus getStatus() {
+        return status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}

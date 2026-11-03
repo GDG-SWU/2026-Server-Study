@@ -1,7 +1,8 @@
 package com.gdg.library.loan;
 
 import com.gdg.library.book.*;
-import com.gdg.library.common.ApiException;
+import com.gdg.library.common.BusinessException;
+import com.gdg.library.common.ErrorCode;
 import com.gdg.library.user.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,8 +20,11 @@ public class LoanService {
     private final BookRepository bookRepository;
     private final Clock clock;
 
-    public List<LoanResponse> findAll() {
-        return loanRepository.findAll().stream().map(LoanResponse::from).toList();
+    public List<LoanResponse> findByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        return loanRepository.findByUserId(userId).stream().map(LoanResponse::from).toList();
     }
 
     public LoanResponse findById(Long id) {
@@ -30,11 +34,11 @@ public class LoanService {
     @Transactional
     public LoanResponse create(LoanCreateRequest request) {
         Book book = bookRepository.findByIdForUpdate(request.bookId())
-                .orElseThrow(() -> ApiException.notFound("도서", request.bookId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> ApiException.notFound("회원", request.userId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         if (book.isBorrowed()) {
-            throw ApiException.conflict("이미 대출 중인 도서입니다. bookId=" + book.getId());
+            throw new BusinessException(ErrorCode.BOOK_ALREADY_BORROWED);
         }
 
         Loan loan = Loan.builder().user(user).book(book).loanDate(LocalDate.now(clock)).build();
@@ -48,7 +52,7 @@ public class LoanService {
         Book book = lockBookForLoan(id);
         Loan loan = findLoan(id);
         if (loan.getReturnDate() != null) {
-            throw ApiException.conflict("이미 반납한 대출입니다. id=" + id);
+            throw new BusinessException(ErrorCode.LOAN_ALREADY_RETURNED);
         }
         loan.returnLoan(LocalDate.now(clock));
         book.returnBook();
@@ -68,13 +72,13 @@ public class LoanService {
     }
 
     private Loan findLoan(Long id) {
-        return loanRepository.findById(id).orElseThrow(() -> ApiException.notFound("대출", id));
+        return loanRepository.findById(id).orElseThrow(() -> new BusinessException(ErrorCode.LOAN_NOT_FOUND));
     }
 
     private Book lockBookForLoan(Long id) {
         Long bookId = loanRepository.findBookIdById(id)
-                .orElseThrow(() -> ApiException.notFound("대출", id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOAN_NOT_FOUND));
         return bookRepository.findByIdForUpdate(bookId)
-                .orElseThrow(() -> ApiException.notFound("도서", bookId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
     }
 }
