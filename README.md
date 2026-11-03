@@ -1,3 +1,44 @@
+# Week 04 — 예외 처리 & 응답 규격
+
+Java 17 / Gradle 프로젝트입니다. IntelliJ에서 `build.gradle`을 열고 Project SDK와 Gradle JVM을 Java 17로 설정한 뒤 Gradle을 새로고침하고 `LibraryApplication`을 실행하세요.
+
+## 이번 변경
+
+- 회원·도서·대출 Controller의 성공/실패 응답은 `success / code / message / data` 네 필드로 통일합니다.
+- 생성은 `201`, 조회·반납·삭제는 `200`입니다. 삭제도 응답 본문을 보내므로 `204`를 사용하지 않습니다.
+- 성공 데이터와 생성된 ID는 `data`, `data.id`에서 확인합니다. 실패와 삭제 성공의 `data`는 `null`입니다.
+- `BusinessException`과 `ErrorCode`로 없는 도서·회원·대출은 `404`, 중복 대출·반납 및 데이터 충돌은 `409`, 잘못된 입력은 `400`으로 처리합니다.
+- `GET /loans?userId=1`은 회원별 대출 내역입니다. 회원이 없으면 `404 / USER_NOT_FOUND`, `userId`가 없으면 `400 / INVALID_REQUEST`, 회원의 내역이 없으면 빈 목록을 반환합니다.
+- Validation과 `@Valid`를 적용하며, JSON 오류·파라미터 누락·타입 오류도 공통 응답으로 처리합니다.
+- 없는 경로는 `404 / NOT_FOUND`, 지원하지 않는 메서드는 `405 / METHOD_NOT_ALLOWED`입니다.
+- 예상하지 못한 예외는 서버에 기록하고 응답에는 내부 정보를 노출하지 않습니다.
+
+성공 예시:
+
+```json
+{"success":true,"code":"SUCCESS","message":"요청에 성공했습니다.","data":[]}
+```
+
+실패 예시:
+
+```json
+{"success":false,"code":"BOOK_NOT_FOUND","message":"도서를 찾을 수 없습니다.","data":null}
+```
+
+## 실행 및 자동 테스트
+
+```powershell
+$env:JAVA_HOME = 'D:\Java\temurin-17\jdk-17.0.20.1+1'
+.\gradlew.bat test bootJar
+.\gradlew.bat bootRun
+```
+
+[Swagger UI](http://localhost:8080/swagger-ui/index.html)에서 수동 호출할 수 있습니다. 이번 작업 범위는 코드 적용과 자동 테스트이며, 4주차 Swagger 직접 호출과 제출용 캡처는 별도로 진행해야 합니다.
+
+아래 내용은 **3주차 구현·실행·캡처 기록**입니다. 과거 응답 구조, `204` 삭제 응답, 전체 대출 조회 방식과 `scripts/swagger-smoke.cjs`는 4주차 계약을 반영하지 않은 자료입니다. 현재 동작은 위 설명을 기준으로 확인하세요.
+
+---
+
 # Week 03 — 도서관 대출 API
 
 Java 17 · Spring Boot 3.3.13 · Spring Data JPA · H2 · Gradle 8.14.5

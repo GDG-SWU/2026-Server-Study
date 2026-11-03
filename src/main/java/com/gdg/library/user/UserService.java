@@ -1,6 +1,7 @@
 package com.gdg.library.user;
 
-import com.gdg.library.common.ApiException;
+import com.gdg.library.common.BusinessException;
+import com.gdg.library.common.ErrorCode;
 import com.gdg.library.loan.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,13 +26,13 @@ public class UserService {
 
     public UserResponse findById(Long id) {
         return UserResponse.from(userRepository.findById(id)
-                .orElseThrow(() -> ApiException.notFound("회원", id)));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @Transactional
     public UserResponse create(UserCreateRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw ApiException.conflict("이미 등록된 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
         User user = User.builder()
                 .email(request.email())
@@ -45,9 +46,9 @@ public class UserService {
     @Transactional
     public void delete(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> ApiException.notFound("회원", id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         if (loanRepository.existsByUserId(id)) {
-            throw ApiException.conflict("대출 기록이 있는 회원은 삭제할 수 없습니다.");
+            throw new BusinessException(ErrorCode.USER_HAS_LOANS);
         }
         userRepository.delete(user);
     }

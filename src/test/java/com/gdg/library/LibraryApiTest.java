@@ -2,7 +2,7 @@ package com.gdg.library;
 
 import com.fasterxml.jackson.databind.*;
 import com.gdg.library.book.*;
-import com.gdg.library.common.ApiException;
+import com.gdg.library.common.BusinessException;
 import com.gdg.library.loan.*;
 import com.gdg.library.user.*;
 import org.junit.jupiter.api.*;
@@ -70,14 +70,14 @@ class LibraryApiTest {
         assertThat(loan.get("dueDate").asText()).isEqualTo("2026-02-14");
         Loan stored = loans.findById(id).orElseThrow();
         assertThat(stored.getDueDate()).isEqualTo(stored.getLoanDate().plusDays(14));
-        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.isBorrowed").value(true));
-        mvc.perform(get("/loans")).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(id));
-        mvc.perform(get("/loans/{id}", id)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id));
+        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.data.isBorrowed").value(true));
+        mvc.perform(get("/loans").param("userId", userId.toString())).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(id));
+        mvc.perform(get("/loans/{id}", id)).andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(id));
         mvc.perform(put("/loans/{id}", id)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.returnDate").value("2026-01-31"))
-                .andExpect(jsonPath("$.dueDate").value("2026-02-14"));
-        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.isBorrowed").value(false));
-        mvc.perform(delete("/loans/{id}", id)).andExpect(status().isNoContent()).andExpect(content().string(""));
+                .andExpect(jsonPath("$.data.returnDate").value("2026-01-31"))
+                .andExpect(jsonPath("$.data.dueDate").value("2026-02-14"));
+        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.data.isBorrowed").value(false));
+        mvc.perform(delete("/loans/{id}", id)).andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true)).andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()));
         mvc.perform(get("/loans/{id}", id)).andExpect(status().isNotFound());
     }
 
@@ -85,18 +85,20 @@ class LibraryApiTest {
     void duplicateLoanAndRepeatedReturnAreConflicts() throws Exception {
         long id = create("/loans", loanBody()).get("id").asLong();
         mvc.perform(post("/loans").contentType(MediaType.APPLICATION_JSON).content(loanBody()))
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("BOOK_ALREADY_BORROWED"));
         assertThat(loans.count()).isEqualTo(1);
         mvc.perform(put("/loans/{id}", id)).andExpect(status().isOk());
-        mvc.perform(put("/loans/{id}", id)).andExpect(status().isConflict());
+        mvc.perform(put("/loans/{id}", id)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("LOAN_ALREADY_RETURNED"));
         create("/loans", loanBody());
     }
 
     @Test
     void deletingActiveLoanMakesBookAvailable() throws Exception {
         long id = create("/loans", loanBody()).get("id").asLong();
-        mvc.perform(delete("/loans/{id}", id)).andExpect(status().isNoContent());
-        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.isBorrowed").value(false));
+        mvc.perform(delete("/loans/{id}", id)).andExpect(status().isOk());
+        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.data.isBorrowed").value(false));
         create("/loans", loanBody());
     }
 
@@ -105,8 +107,8 @@ class LibraryApiTest {
         long oldId = create("/loans", loanBody()).get("id").asLong();
         mvc.perform(put("/loans/{id}", oldId)).andExpect(status().isOk());
         create("/loans", loanBody());
-        mvc.perform(delete("/loans/{id}", oldId)).andExpect(status().isNoContent());
-        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.isBorrowed").value(true));
+        mvc.perform(delete("/loans/{id}", oldId)).andExpect(status().isOk());
+        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.data.isBorrowed").value(true));
         mvc.perform(post("/loans").contentType(MediaType.APPLICATION_JSON).content(loanBody()))
                 .andExpect(status().isConflict());
     }
@@ -120,7 +122,7 @@ class LibraryApiTest {
                 .content("{\"userId\":" + userId + ",\"bookId\":999999}"))
                 .andExpect(status().isNotFound());
         assertThat(loans.count()).isZero();
-        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.isBorrowed").value(false));
+        mvc.perform(get("/books/{id}", bookId)).andExpect(jsonPath("$.data.isBorrowed").value(false));
     }
 
     @Test
@@ -140,14 +142,14 @@ class LibraryApiTest {
     @Test
     void usersAndBooksSupportListReadAndDelete() throws Exception {
         mvc.perform(get("/users")).andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].email").value("sua@example.com"))
-                .andExpect(jsonPath("$[0].password").doesNotExist());
+                .andExpect(jsonPath("$.data[0].email").value("sua@example.com"))
+                .andExpect(jsonPath("$.data[0].password").doesNotExist());
         mvc.perform(get("/users/{id}", userId)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.createdAt").value("2026-01-31T00:30:00"))
-                .andExpect(jsonPath("$.password").doesNotExist());
-        mvc.perform(get("/books")).andExpect(status().isOk()).andExpect(jsonPath("$[0].isBorrowed").value(false));
-        mvc.perform(delete("/books/{id}", bookId)).andExpect(status().isNoContent());
-        mvc.perform(delete("/users/{id}", userId)).andExpect(status().isNoContent());
+                .andExpect(jsonPath("$.data.createdAt").value("2026-01-31T00:30:00"))
+                .andExpect(jsonPath("$.data.password").doesNotExist());
+        mvc.perform(get("/books")).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].isBorrowed").value(false));
+        mvc.perform(delete("/books/{id}", bookId)).andExpect(status().isOk());
+        mvc.perform(delete("/users/{id}", userId)).andExpect(status().isOk());
         mvc.perform(get("/books/{id}", bookId)).andExpect(status().isNotFound());
         mvc.perform(get("/users/{id}", userId)).andExpect(status().isNotFound());
     }
@@ -190,8 +192,8 @@ class LibraryApiTest {
             try {
                 loanService.create(new LoanCreateRequest(userId, bookId));
                 return 201;
-            } catch (ApiException exception) {
-                return exception.getStatus().value();
+            } catch (BusinessException exception) {
+                return exception.getErrorCode().getStatus().value();
             }
         };
         try {
@@ -270,6 +272,68 @@ class LibraryApiTest {
         return mapper.writeValueAsString(new UserCreateRequest(email, password));
     }
 
+    @Test
+    void errorsUseCommonEnvelopeAndExpectedCodes() throws Exception {
+        assertError(get("/books/999999"), 404, "BOOK_NOT_FOUND");
+        assertError(get("/users/999999"), 404, "USER_NOT_FOUND");
+        assertError(get("/loans/999999"), 404, "LOAN_NOT_FOUND");
+        assertError(get("/loans").param("userId", "999999"), 404, "USER_NOT_FOUND");
+        assertError(get("/loans"), 400, "INVALID_REQUEST");
+        assertError(get("/loans").param("userId", "abc"), 400, "INVALID_REQUEST");
+        assertError(post("/books").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"\",\"author\":\"\"}"), 400, "INVALID_REQUEST");
+        assertError(post("/loans").contentType(MediaType.APPLICATION_JSON)
+                .content("{}"), 400, "INVALID_REQUEST");
+        assertError(post("/loans").contentType(MediaType.APPLICATION_JSON)
+                .content("{broken"), 400, "INVALID_REQUEST");
+        assertError(post("/users").contentType(MediaType.APPLICATION_JSON)
+                .content(userBody("sua@example.com", "another-password")), 409, "DUPLICATE_EMAIL");
+        assertError(get("/missing-url"), 404, "NOT_FOUND");
+        assertError(put("/books"), 405, "METHOD_NOT_ALLOWED");
+    }
+
+    @Test
+    void memberLoanListFiltersOtherMembersAndAllowsEmptyHistory() throws Exception {
+        long secondUserId = create("/users", userBody("other@example.com", "password")).get("id").asLong();
+        mvc.perform(get("/loans").param("userId", userId.toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data").isEmpty());
+        long loanId = create("/loans", loanBody()).get("id").asLong();
+        mvc.perform(get("/loans").param("userId", userId.toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(loanId));
+        mvc.perform(get("/loans").param("userId", Long.toString(secondUserId)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    void unexpectedErrorsHideInternalDetails() throws Exception {
+        BookService service = org.mockito.Mockito.mock(BookService.class);
+        org.mockito.Mockito.when(service.findById(1L))
+                .thenThrow(new RuntimeException("secret SQL and internal class details"));
+        MockMvc isolatedMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+                .standaloneSetup(new BookController(service))
+                .setControllerAdvice(new com.gdg.library.common.GlobalExceptionHandler())
+                .build();
+        isolatedMvc.perform(get("/books/1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
+                .andExpect(jsonPath("$.message").value("서버 오류가 발생했습니다."))
+                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("secret SQL"))));
+    }
+
+    private void assertError(RequestBuilder request, int httpStatus, String code) throws Exception {
+        MvcResult result = mvc.perform(request).andExpect(status().is(httpStatus))
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(code))
+                .andExpect(jsonPath("$.message").isNotEmpty())
+                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
+                .andReturn();
+        assertThat(mapper.readTree(result.getResponse().getContentAsByteArray()).size()).isEqualTo(4);
+    }
+
     private String loanBody() {
         return "{\"userId\":" + userId + ",\"bookId\":" + bookId + "}";
     }
@@ -277,6 +341,11 @@ class LibraryApiTest {
     private JsonNode create(String path, String body) throws Exception {
         MvcResult result = mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated()).andReturn();
-        return mapper.readTree(result.getResponse().getContentAsByteArray());
+        JsonNode response = mapper.readTree(result.getResponse().getContentAsByteArray());
+        assertThat(response.size()).isEqualTo(4);
+        assertThat(response.get("success").asBoolean()).isTrue();
+        assertThat(response.get("code").asText()).isEqualTo("SUCCESS");
+        assertThat(response.get("message").asText()).isNotBlank();
+        return response.get("data");
     }
 }
