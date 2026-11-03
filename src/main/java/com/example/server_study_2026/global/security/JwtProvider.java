@@ -17,8 +17,8 @@ public class JwtProvider {
     private final SecretKey secretKey;
     private final long expirationMs;
 
-    public JwtProvider(@Value("${jwt.secret") String secret,
-                       @Value("${jwt.expiration-ms") long expirationMs) {
+    public JwtProvider(@Value("${jwt.secret}") String secret,
+                       @Value("${jwt.expiration-ms}") long expirationMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
