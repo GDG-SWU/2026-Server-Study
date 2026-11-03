@@ -2,13 +2,13 @@ package com.example.server_study_2026.domain.loan;
 
 import com.example.server_study_2026.domain.book.Book;
 import com.example.server_study_2026.domain.student.Student;
-import com.example.server_study_2026.global.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
-import org.apache.catalina.User;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "loan")
