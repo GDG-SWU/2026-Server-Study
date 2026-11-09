@@ -6,15 +6,17 @@ import com.example.server_study_2026.domain.loan.dto.LoanCreateRequest;
 import com.example.server_study_2026.domain.loan.dto.LoanResponse;
 import com.example.server_study_2026.domain.user.User;
 import com.example.server_study_2026.domain.user.UserRepository;
+import com.example.server_study_2026.global.exception.BusinessException;
+import com.example.server_study_2026.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @Transactional
 public class LoanService {
-
 
     private final LoanRepository loanRepository;
     private final UserRepository userRepository;
@@ -30,15 +32,18 @@ public class LoanService {
         this.bookRepository = bookRepository;
     }
 
+    // 대출 신청
     public LoanResponse createLoan(LoanCreateRequest request) {
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         Book book = bookRepository.findById(request.getBookId())
-                .orElseThrow(() -> new IllegalArgumentException("도서를 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.BOOK_NOT_FOUND));
 
         if (Boolean.TRUE.equals(book.getIsBorrowed())) {
-            throw new IllegalStateException("이미 대출 중인 도서입니다.");
+            throw new BusinessException(ErrorCode.BOOK_ALREADY_LOANED);
         }
 
         book.borrow();
@@ -54,21 +59,23 @@ public class LoanService {
         return new LoanResponse(savedLoan);
     }
 
+    // 도서 반납
     public LoanResponse returnLoan(Long id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("대출 기록을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.LOAN_NOT_FOUND));
 
         if (loan.getReturnDate() != null) {
-            throw new IllegalStateException("이미 반납 처리된 대출입니다.");
+            throw new BusinessException(ErrorCode.LOAN_ALREADY_RETURNED);
         }
 
         loan.completeReturn(LocalDate.now());
 
         return new LoanResponse(loan);
     }
+
     // 대출 목록 조회
-    @Transactional
-    public java.util.List<LoanResponse> getLoans() {
+    public List<LoanResponse> getLoans() {
         return loanRepository.findAll()
                 .stream()
                 .map(LoanResponse::new)
@@ -76,10 +83,10 @@ public class LoanService {
     }
 
     // 대출 단건 조회
-    @Transactional
     public LoanResponse getLoan(Long id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("대출 기록을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.LOAN_NOT_FOUND));
 
         return new LoanResponse(loan);
     }
@@ -87,13 +94,13 @@ public class LoanService {
     // 대출 기록 삭제
     public void deleteLoan(Long id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("대출 기록을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.LOAN_NOT_FOUND));
 
         if (loan.getReturnDate() == null) {
-            loan.completeReturn(java.time.LocalDate.now());
+            loan.completeReturn(LocalDate.now());
         }
 
         loanRepository.delete(loan);
     }
-
 }
