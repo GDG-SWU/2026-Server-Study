@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/signup", "/users/login").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/health").permitAll()
 
                         // ADMIN만 접근 가능
                         .requestMatchers(HttpMethod.POST, "/books").hasRole("ADMIN")
