@@ -1,17 +1,18 @@
 package com.example.server_study_2026.domain;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AccessLevel;
-
-
 
 @Entity
 @Table(name = "user")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class User extends BaseEntity {
 
     @Id
@@ -24,9 +25,11 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String password;
 
-    @Builder
-    public User(String email, String password) {
-        this.email = email;
-        this.password = password;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    public enum Role {
+        USER, ADMIN
     }
 }

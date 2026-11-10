@@ -5,10 +5,8 @@ import com.example.server_study_2026.domain.Loan;
 import com.example.server_study_2026.domain.User;
 import com.example.server_study_2026.dto.LoanCreateRequest;
 import com.example.server_study_2026.dto.LoanResponse;
-
 import com.example.server_study_2026.global.exception.BusinessException;
 import com.example.server_study_2026.global.exception.ErrorCode;
-
 import com.example.server_study_2026.repository.BookRepository;
 import com.example.server_study_2026.repository.LoanRepository;
 import com.example.server_study_2026.repository.UserRepository;
@@ -29,18 +27,17 @@ public class LoanService {
     private final UserRepository userRepository;
 
     /**
-     * 도서 대출 신청
+     * 도서 대출 신청 (토큰의 이메일 활용)
      */
     @Transactional
-    public LoanResponse createLoan(LoanCreateRequest request) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("회원이 없습니다. id=" + request.userId()));
+    public LoanResponse createLoan(String email, LoanCreateRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Book book = bookRepository.findById(request.bookId())
-                .orElseThrow(() -> new IllegalArgumentException("도서가 없습니다. id=" + request.bookId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
 
         if (book.isBorrowed()) {
-//            throw new IllegalStateException("이미 대출 중인 도서입니다. id=" + request.bookId());
             throw new BusinessException(ErrorCode.ALREADY_BORROWED);
         }
 
@@ -56,12 +53,20 @@ public class LoanService {
     }
 
     /**
-     * 도서 반납 처리
+     * 도서 반납 처리 (남의 대출 반납 불가 검증 포함)
      */
     @Transactional
-    public LoanResponse returnLoan(Long id) {
+    public LoanResponse returnLoan(String email, Long id) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("대출 내역이 없습니다. id=" + id));
+
+        // 과제 조건: 남의 대출은 반납 불가 (ADMIN이거나 본인의 대출인지 확인)
+        if (user.getRole() != User.Role.ADMIN && !loan.getUser().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
 
         if (loan.getReturnDate() != null) {
             throw new IllegalStateException("이미 반납된 도서입니다. id=" + id);

@@ -15,7 +15,14 @@ public enum ErrorCode {
 
     // 409 CONFLICT
     ALREADY_BORROWED(HttpStatus.CONFLICT, 409, "이미 대출 중인 도서입니다."),
-    ALREADY_RETURNED(HttpStatus.CONFLICT, 409, "이미 반납된 도서입니다.");
+    ALREADY_RETURNED(HttpStatus.CONFLICT, 409, "이미 반납된 도서입니다."),
+
+    // 6주차
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, 409, "이미 존재하는 이메일입니다."),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, 401, "이메일 또는 비밀번호가 일치하지 않습니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 401, "인증 정보가 없거나 유효하지 않습니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, 403, "권한이 없습니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, 401, "유효하지 않은 토큰입니다.");
 
     private final HttpStatus status;
     private final int code;
