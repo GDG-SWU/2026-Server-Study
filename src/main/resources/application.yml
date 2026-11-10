@@ -11,3 +11,7 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+
+jwt:
+  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1zdHVkeQ==
+  expiration-ms: 3600000   # 1시간 = 60 * 60 * 1000
