@@ -32,10 +32,10 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanResponse create(LoanCreateRequest request) {
+    public LoanResponse create(LoanCreateRequest request, Long userId) {
         Book book = bookRepository.findByIdForUpdate(request.bookId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         if (book.isBorrowed()) {
             throw new BusinessException(ErrorCode.BOOK_ALREADY_BORROWED);
@@ -48,9 +48,12 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanResponse returnLoan(Long id) {
+    public LoanResponse returnLoan(Long id, Long userId) {
         Book book = lockBookForLoan(id);
         Loan loan = findLoan(id);
+        if (!loan.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
         if (loan.getReturnDate() != null) {
             throw new BusinessException(ErrorCode.LOAN_ALREADY_RETURNED);
         }

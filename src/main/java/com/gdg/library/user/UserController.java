@@ -1,6 +1,8 @@
 package com.gdg.library.user;
 
 import com.gdg.library.common.ApiResponse;
+import com.gdg.library.security.LoginUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,6 +17,13 @@ import java.util.List;
 @Tag(name = "Users", description = "회원 등록, 조회, 삭제")
 public class UserController {
     private final UserService userService;
+
+    @GetMapping("/me")
+    @Operation(summary = "내 정보 조회")
+    public ApiResponse<UserResponse> me(
+            @AuthenticationPrincipal LoginUser user) {
+        return ApiResponse.ok(userService.findById(user.id()));
+    }
 
     @GetMapping
     @Operation(summary = "회원 목록 조회")

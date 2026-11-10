@@ -5,6 +5,7 @@ import com.gdg.library.common.ErrorCode;
 import com.gdg.library.loan.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Clock;
@@ -40,7 +41,11 @@ public class UserService {
                 .createdAt(LocalDateTime.now(clock))
                 .build();
         // DB의 UNIQUE 제약은 동시 회원 등록 시에도 중복 이메일을 막는다.
-        return UserResponse.from(userRepository.save(user));
+        try {
+            return UserResponse.from(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
     }
 
     @Transactional

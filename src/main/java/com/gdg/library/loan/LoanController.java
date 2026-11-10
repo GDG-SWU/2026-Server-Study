@@ -1,6 +1,8 @@
 package com.gdg.library.loan;
 
 import com.gdg.library.common.ApiResponse;
+import com.gdg.library.security.LoginUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,15 +32,15 @@ public class LoanController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "대출 신청", description = "userId, bookId를 받습니다. 반납 예정일은 대출일로부터 14일 뒤입니다. 이미 대출 중인 책이면 409를 반환합니다.")
-    public ApiResponse<LoanResponse> create(@Valid @RequestBody LoanCreateRequest request) {
-        return ApiResponse.ok(loanService.create(request));
+    @Operation(summary = "대출 신청", description = "bookId를 받고 로그인한 회원으로 대출합니다. 반납 예정일은 대출일로부터 14일 뒤입니다. 이미 대출 중인 책이면 409를 반환합니다.")
+    public ApiResponse<LoanResponse> create(@Valid @RequestBody LoanCreateRequest request, @AuthenticationPrincipal LoginUser user) {
+        return ApiResponse.ok(loanService.create(request, user.id()));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "도서 반납", description = "요청 본문은 없습니다. 서울 기준 오늘 날짜로 반납 처리합니다. 이미 반납했으면 409를 반환합니다.")
-    public ApiResponse<LoanResponse> returnLoan(@PathVariable Long id) {
-        return ApiResponse.ok(loanService.returnLoan(id));
+    public ApiResponse<LoanResponse> returnLoan(@PathVariable Long id, @AuthenticationPrincipal LoginUser user) {
+        return ApiResponse.ok(loanService.returnLoan(id, user.id()));
     }
 
     @DeleteMapping("/{id}")

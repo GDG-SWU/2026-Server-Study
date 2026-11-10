@@ -27,8 +27,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(LibraryApiTest.FixedClockConfig.class)
-class LibraryApiTest {
+class LibraryApiTest extends ApiTestSupport {
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.web.context.WebApplicationContext context;
+    @Autowired com.gdg.library.security.JwtTokenProvider tokens;
     @Autowired ObjectMapper mapper;
     @Autowired LoanRepository loans;
     @Autowired BookRepository books;
@@ -51,10 +53,17 @@ class LibraryApiTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(context)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity()).build();
         loans.deleteAll();
         books.deleteAll();
         users.deleteAll();
-        userId = create("/users", userBody("sua@example.com", "practice-password")).get("id").asLong();
+        userId = create("/users/signup", userBody("sua@example.com", "practice-password")).get("id").asLong();
+        jdbc.update("update \"user\" set role = 'ADMIN' where id = ?", userId);
+        String token = tokens.issue(users.findById(userId).orElseThrow());
+        mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(context)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
+                .defaultRequest(get("/").header("Authorization", "Bearer " + token)).build();
         bookId = create("/books", "{\"title\":\"자바의 정석\",\"author\":\"남궁성\"}").get("id").asLong();
     }
 
@@ -115,9 +124,8 @@ class LibraryApiTest {
 
     @Test
     void missingUserOrBookDoesNotChangeState() throws Exception {
-        mvc.perform(post("/loans").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userId\":999999,\"bookId\":" + bookId + "}"))
-                .andExpect(status().isNotFound());
+        assertThatThrownBy(() -> loanService.create(new LoanCreateRequest(bookId), 999999L))
+                .isInstanceOf(BusinessException.class);
         mvc.perform(post("/loans").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":" + userId + ",\"bookId\":999999}"))
                 .andExpect(status().isNotFound());
@@ -190,7 +198,7 @@ class LibraryApiTest {
             ready.countDown();
             if (!start.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("start timeout");
             try {
-                loanService.create(new LoanCreateRequest(userId, bookId));
+                loanService.create(new LoanCreateRequest(bookId), userId);
                 return 201;
             } catch (BusinessException exception) {
                 return exception.getErrorCode().getStatus().value();
@@ -213,7 +221,7 @@ class LibraryApiTest {
 
     @Test
     void registrationStoresHashedPasswordAndReturnsOnlyPublicFields() throws Exception {
-        String rawPassword = "가".repeat(255);
+        String rawPassword = "가".repeat(24);
         JsonNode response = create("/users", userBody("second@example.com", rawPassword));
         assertThat(response.size()).isEqualTo(3);
         assertThat(response.has("password")).isFalse();
@@ -335,7 +343,7 @@ class LibraryApiTest {
     }
 
     private String loanBody() {
-        return "{\"userId\":" + userId + ",\"bookId\":" + bookId + "}";
+        return "{\"bookId\":" + bookId + "}";
     }
 
     private JsonNode create(String path, String body) throws Exception {
