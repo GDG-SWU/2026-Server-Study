@@ -4,3 +4,9 @@ build/
 *.iml
 .tools/
 .local/
+
+.env
+.env.*
+!.env.example
+
+.gradle-user-home/

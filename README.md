@@ -1,3 +1,93 @@
+# Week 05 — 인증/인가 & JWT
+
+Java 17 / Gradle / Spring Security / BCrypt / JWT 구현입니다. 작업 브랜치는 `week-05/sua`이며, `week-04/sua`에서 분기했습니다.
+
+## IntelliJ 실행
+
+1. `build.gradle`을 Gradle 프로젝트로 열고 Project SDK와 Gradle JVM을 **Java 17**로 설정합니다.
+2. Gradle을 새로고침합니다.
+3. Run → Edit Configurations → `LibraryApplication` → Environment variables에 `JWT_SECRET`을 설정합니다. 충분히 무작위인 **32바이트 이상의 UTF-8 문자열**이 필요하며 코드에 기본값은 없습니다.
+4. ADMIN 테스트에 H2 콘솔을 쓰려면 Active profiles를 `dev`로 지정합니다. 기본 프로필에서는 콘솔에 접근할 수 없습니다.
+5. 실행 후 [Swagger](http://localhost:8080/swagger-ui.html)를 엽니다. **Authorize**에는 토큰만 입력합니다.
+
+PowerShell에서 이번 실행에 사용할 임시 비밀키를 생성해 실행할 수도 있습니다. 재시작마다 새 키를 생성하면 이전 토큰은 무효가 됩니다.
+
+```powershell
+$env:JAVA_HOME = 'D:\Java\temurin-17\jdk-17.0.20.1+1'
+$jwtBytes = New-Object byte[] 32
+$jwtRandom = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$jwtRandom.GetBytes($jwtBytes)
+$jwtRandom.Dispose()
+$env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
+.\gradlew.bat bootRun --args='--spring.profiles.active=dev'
+```
+
+H2 메모리 DB이므로 서버를 종료하면 데이터가 초기화됩니다. 현재 프로젝트는 MySQL이 아니므로 Workbench의 `USE library` 예제 대신 아래 H2 콘솔을 사용하세요.
+
+## API와 인증 흐름
+
+- `POST /users/signup`: 이메일·비밀번호로 가입, 항상 USER, BCrypt cost 10으로 저장, 성공 `201`, 중복 `409 DUPLICATE_EMAIL`.
+- `POST /users/login`: 성공 `200`, 토큰은 **`data.accessToken`**. 틀린 이메일·비밀번호는 `401 LOGIN_FAILED`.
+- 회원가입 비밀번호는 BCrypt 제한에 맞춰 UTF-8 기준 72바이트까지 허용합니다.
+- 이후 요청 헤더는 `Authorization: Bearer <토큰>`입니다. 토큰 유효기간은 기본 1시간이며 `JWT_EXPIRATION_SECONDS`로 설정할 수 있습니다.
+- JWT 서명·만료·회원 식별값·역할을 검증해 `SecurityContext`에 인증 정보를 등록합니다. 세션은 사용하지 않습니다.
+- 회원가입·로그인·Swagger 문서는 공개, 도서 등록/삭제는 ADMIN, 나머지는 로그인한 회원이 접근합니다.
+- 기존 `POST /users`는 학습 코드를 유지하기 위한 인증 필요 경로입니다. 신규 가입은 공개 경로 `/users/signup`을 사용하세요.
+- `GET /users/me`: 로그인한 회원 정보. 비밀번호는 응답하지 않습니다.
+- `POST /loans`: **`{"bookId": 1}`**만 보냅니다. 회원 ID는 토큰에서 가져오며 임의의 `userId`를 보내도 대출 신청자를 바꿀 수 없습니다.
+- `PUT /loans/{id}`: 본인 대출만 반납할 수 있으며 다른 회원이면 `403 FORBIDDEN`입니다.
+- 기존 회원별 대출 조회 `GET /loans?userId=1`과 나머지 조회·삭제 API는 이전 계약을 유지합니다.
+
+인증·인가 오류도 기존 `ApiResponse` 형식으로 반환합니다.
+
+```json
+{"success":false,"code":"UNAUTHORIZED","message":"로그인이 필요합니다.","data":null}
+```
+
+| 상황 | 상태 / code |
+| --- | --- |
+| 보호된 API에 토큰 없음 | 401 / UNAUTHORIZED |
+| 변조·만료·형식 오류 토큰 | 401 / INVALID_TOKEN |
+| USER의 ADMIN API 접근, 다른 회원의 반납 | 403 / FORBIDDEN |
+
+## Postman 테스트와 ADMIN 준비
+
+[Postman 컬렉션](docs/postman/week-05-library.postman_collection.json)을 Import합니다. 토큰과 생성된 도서·대출 ID는 응답에서 자동 저장하며, 실제 토큰이나 비밀키는 파일에 포함하지 않았습니다.
+
+1. 새 서버에서 **1번 폴더**를 순서대로 실행합니다. USER A·B와 ADMIN 테스트용 계정이 생성됩니다. 이 시점에는 모두 USER입니다.
+2. dev 프로필에서 [H2 콘솔](http://localhost:8080/h2-console)에 접속합니다. Driver `org.h2.Driver`, JDBC URL `jdbc:h2:mem:library`, User Name `sa`, Password는 빈칸입니다.
+3. 콘솔에서 다음 SQL을 실행합니다. H2는 테이블 이름을 큰따옴표로 감쌉니다.
+
+```sql
+UPDATE "user" SET role = 'ADMIN' WHERE email = 'admin@test.com';
+```
+
+4. **2번 폴더**를 실행합니다. ADMIN으로 다시 로그인한 새 토큰을 받은 뒤 도서 생성·대출·타인 반납 거절·내 정보·본인 반납을 확인합니다.
+5. 컬렉션 05·06·07 요청의 **401 / 200 / 403 응답을 각각 캡처**합니다. URL, 상태 코드, 응답 body가 보이게 하고 Authorization 헤더, Token 입력값, JWT_SECRET은 가리세요.
+
+DB에서 역할을 바꿔도 기존 토큰의 역할은 유지됩니다. 반드시 다시 로그인해야 ADMIN 토큰을 받습니다. 컬렉션 재실행 시 중복 가입이나 중복 대출이 생길 수 있으므로 처음부터 확인하려면 서버를 재시작하세요.
+
+실행 후 컬렉션을 다시 Export할 때는 `userToken`, `otherToken`, `adminToken`, `invalidToken` 값을 비우세요. 캡처는 Postman에서 직접 수행해야 하며, 저장소의 기존 `docs/screenshots`는 3주차 자료입니다.
+
+## 검증 및 제출
+
+```powershell
+.\gradlew.bat test bootJar
+```
+
+테스트 비밀키는 테스트 실행 중 무작위 생성하므로 테스트에 환경변수 설정은 필요하지 않습니다. 기존 대출·예외 처리 회귀 테스트와 실제 JWT 기반 가입·로그인·권한·변조·만료·대출 소유권·Swagger 접근 테스트를 실행합니다.
+
+- 제출 브랜치: `week-05/sua`
+- PR 제목: `[5주차] 수아 - 인증/인가 & JWT`
+- PR 본문: 구현 설명 및 Postman 캡처 3장 이상(401, 403, 200 각 1장)
+- 커밋·원격 push·PR 생성은 별도로 진행합니다.
+
+JWT 라이브러리 사용 참고: [JJWT 공식 문서](https://github.com/jwtk/jjwt/tree/0.12.6).
+
+---
+
+아래는 이전 주차 학습 기록입니다. 현재 인증 방식과 실행·테스트 절차는 위 5주차 설명을 기준으로 확인하세요.
+
 # Week 04 — 예외 처리 & 응답 규격
 
 Java 17 / Gradle 프로젝트입니다. IntelliJ에서 `build.gradle`을 열고 Project SDK와 Gradle JVM을 Java 17로 설정한 뒤 Gradle을 새로고침하고 `LibraryApplication`을 실행하세요.
