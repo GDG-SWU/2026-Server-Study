@@ -1,3 +1,4 @@
+
 package com.example.server_study_2026.domain.loan;
 
 import com.example.server_study_2026.domain.loan.dto.LoanCreateRequest;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,9 +29,10 @@ public class LoanController {
     @PostMapping
     @Operation(summary = "대출 신청")
     public ResponseEntity<ApiResponse<LoanResponse>> createLoan(
-            @Valid @RequestBody LoanCreateRequest request
+            @Valid @RequestBody LoanCreateRequest request,
+            @AuthenticationPrincipal Long userId
     ) {
-        LoanResponse response = loanService.createLoan(request);
+        LoanResponse response = loanService.createLoan(request, userId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -40,37 +43,39 @@ public class LoanController {
     @PutMapping("/{id}")
     @Operation(summary = "도서 반납")
     public ApiResponse<LoanResponse> returnLoan(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long userId
     ) {
-        LoanResponse response = loanService.returnLoan(id);
-
-        return ApiResponse.success(response);
+        return ApiResponse.success(loanService.returnLoan(id, userId));
     }
 
     // 대출 목록 조회
     @GetMapping
     @Operation(summary = "대출 목록 조회")
-    public ApiResponse<List<LoanResponse>> getLoans() {
-        return ApiResponse.success(loanService.getLoans());
+    public ApiResponse<List<LoanResponse>> getLoans(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ApiResponse.success(loanService.getLoans(userId));
     }
 
     // 대출 단건 조회
     @GetMapping("/{id}")
     @Operation(summary = "대출 단건 조회")
     public ApiResponse<LoanResponse> getLoan(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long userId
     ) {
-        return ApiResponse.success(loanService.getLoan(id));
+        return ApiResponse.success(loanService.getLoan(id, userId));
     }
 
     // 대출 기록 삭제
     @DeleteMapping("/{id}")
     @Operation(summary = "대출 기록 삭제")
     public ApiResponse<Void> deleteLoan(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long userId
     ) {
-        loanService.deleteLoan(id);
-
+        loanService.deleteLoan(id, userId);
         return ApiResponse.success();
     }
 }

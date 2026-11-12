@@ -1,3 +1,4 @@
+
 package com.example.server_study_2026.domain.loan;
 
 import com.example.server_study_2026.domain.book.Book;
@@ -33,8 +34,9 @@ public class LoanService {
     }
 
     // 대출 신청
-    public LoanResponse createLoan(LoanCreateRequest request) {
-        User user = userRepository.findById(request.getUserId())
+    public LoanResponse createLoan(LoanCreateRequest request, Long userId) {
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -60,10 +62,13 @@ public class LoanService {
     }
 
     // 도서 반납
-    public LoanResponse returnLoan(Long id) {
+    public LoanResponse returnLoan(Long id, Long userId) {
+
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() ->
                         new BusinessException(ErrorCode.LOAN_NOT_FOUND));
+
+        checkLoanOwner(loan, userId);
 
         if (loan.getReturnDate() != null) {
             throw new BusinessException(ErrorCode.LOAN_ALREADY_RETURNED);
@@ -75,32 +80,48 @@ public class LoanService {
     }
 
     // 대출 목록 조회
-    public List<LoanResponse> getLoans() {
+    public List<LoanResponse> getLoans(Long userId) {
+
         return loanRepository.findAll()
                 .stream()
+                .filter(loan -> loan.getUser().getId().equals(userId))
                 .map(LoanResponse::new)
                 .toList();
     }
 
     // 대출 단건 조회
-    public LoanResponse getLoan(Long id) {
+    public LoanResponse getLoan(Long id, Long userId) {
+
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() ->
                         new BusinessException(ErrorCode.LOAN_NOT_FOUND));
+
+        checkLoanOwner(loan, userId);
 
         return new LoanResponse(loan);
     }
 
     // 대출 기록 삭제
-    public void deleteLoan(Long id) {
+    public void deleteLoan(Long id, Long userId) {
+
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() ->
                         new BusinessException(ErrorCode.LOAN_NOT_FOUND));
+
+        checkLoanOwner(loan, userId);
 
         if (loan.getReturnDate() == null) {
             loan.completeReturn(LocalDate.now());
         }
 
         loanRepository.delete(loan);
+    }
+
+    // 대출 기록 소유자 확인
+    private void checkLoanOwner(Loan loan, Long userId) {
+
+        if (!loan.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 }
