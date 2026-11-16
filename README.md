@@ -1,12 +1,62 @@
+# Week 06 — 운영 설정과 상태 확인
+
+`week-06/sebin`의 전체 운영 Java 파일 경로와 추가 파일 구성을 반영했습니다.
+작업 브랜치는 `week-06/sua`입니다. 기존 API 기능과 학습 문서·회귀 테스트를 유지합니다.
+
+- 공개 상태 확인: `GET /health` → `200`, `data: "ok"`.
+- 로컬 MySQL: `compose.yaml`의 MySQL 8.4, 데이터는 `mysql-data` 볼륨에 저장합니다.
+- 운영 환경: `prod` 프로필, 포트 `5000`, `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` / `JWT_SECRET` 사용.
+- 운영 환경은 Docker Compose 연동과 SQL 로그를 비활성화합니다.
+- 기본 패키지·운영 Java 파일명은 기준 브랜치와 동일하며, `CLAUDE.md`도 추가했습니다.
+- 현재 Spring Boot 3.3과 호환되는 Swagger 의존성을 유지합니다.
+
+운영 실행 예시입니다. 실제 환경변수 값은 로컬 또는 배포 환경에서 설정합니다.
+
+```powershell
+.\gradlew.bat test bootJar
+java -jar build/libs/Server_Study_2026-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+```
+
+이전 MySQL 8.0 데이터가 있는 볼륨은 삭제하지 말고 업그레이드 전 백업하세요.
+
+아래는 기존 실행 안내와 이전 주차 기록입니다.
+
+---
+
 # Week 05 — 인증/인가 & JWT
 
 Java 17 / Gradle / Spring Security / BCrypt / JWT 구현입니다. 작업 브랜치는 `week-05/sua`이며, `week-04/sua`에서 분기했습니다.
+
+## 파일 구조
+
+`week-06/sebin`과 같은 Java 파일명과 `api`, `domain`, `service`, `global` 배치를 사용합니다.
+회원 인증은 `UserController` / `UserService`, DTO는 `SignupRequest` / `TokenResponse`입니다.
+`BaseEntity`와 JPA Auditing이 회원 가입 시각을 기록합니다.
+기존 API, JSON 응답과 Swagger schema 이름은 유지합니다.
+기존 학습 문서·회귀 테스트·사용자 작성 운영 설정은 함께 보관합니다.
+
+## MySQL과 Compose 실행
+
+기본 실행 환경은 수업과 동일하게 MySQL 8.4입니다. PowerShell에서 실행합니다.
+
+```powershell
+$env:DB_PASSWORD = '<로컬 MySQL 비밀번호>'
+docker compose up -d --wait
+$env:JWT_SECRET = '<32바이트 이상의 임의 비밀키>'
+.\gradlew.bat bootRun
+```
+
+`DB_PASSWORD`는 Compose와 IntelliJ 환경변수에 같은 값으로 설정합니다.
+3306 포트가 사용 중이면 두 실행 환경 모두 `DB_PORT`를 같은 다른 포트로 지정합니다.
+Compose의 `.env`는 Spring 앱에 자동 전달되지 않으므로 IntelliJ에도 환경변수를 설정해야 합니다.
+MySQL 종료는 `docker compose down`이며 데이터는 `mysql-data` 볼륨에 유지됩니다.
+H2로 기존 실습을 실행하려면 `dev` 프로필을 사용합니다. 자동 테스트는 별도 H2 DB를 사용합니다.
 
 ## IntelliJ 실행
 
 1. `build.gradle`을 Gradle 프로젝트로 열고 Project SDK와 Gradle JVM을 **Java 17**로 설정합니다.
 2. Gradle을 새로고침합니다.
-3. Run → Edit Configurations → `LibraryApplication` → Environment variables에 `JWT_SECRET`을 설정합니다. 충분히 무작위인 **32바이트 이상의 UTF-8 문자열**이 필요하며 코드에 기본값은 없습니다.
+3. Run → Edit Configurations → `ServerStudy2026Application` → Environment variables에 `JWT_SECRET`과 기본 MySQL 실행에 필요한 `DB_PASSWORD`를 설정합니다. 충분히 무작위인 **32바이트 이상의 UTF-8 문자열**이 필요하며 코드에 기본값은 없습니다.
 4. ADMIN 테스트에 H2 콘솔을 쓰려면 Active profiles를 `dev`로 지정합니다. 기본 프로필에서는 콘솔에 접근할 수 없습니다.
 5. 실행 후 [Swagger](http://localhost:8080/swagger-ui.html)를 엽니다. **Authorize**에는 토큰만 입력합니다.
 
@@ -22,7 +72,7 @@ $env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
 .\gradlew.bat bootRun --args='--spring.profiles.active=dev'
 ```
 
-H2 메모리 DB이므로 서버를 종료하면 데이터가 초기화됩니다. 현재 프로젝트는 MySQL이 아니므로 Workbench의 `USE library` 예제 대신 아래 H2 콘솔을 사용하세요.
+dev 프로필의 H2 메모리 DB는 서버를 종료하면 데이터가 초기화됩니다. dev 프로필에서는 아래 H2 콘솔을 사용하고, 기본 MySQL 환경에서는 Workbench의 `USE library` 예제를 사용하세요.
 
 ## API와 인증 흐름
 
@@ -90,7 +140,7 @@ JWT 라이브러리 사용 참고: [JJWT 공식 문서](https://github.com/jwtk/
 
 # Week 04 — 예외 처리 & 응답 규격
 
-Java 17 / Gradle 프로젝트입니다. IntelliJ에서 `build.gradle`을 열고 Project SDK와 Gradle JVM을 Java 17로 설정한 뒤 Gradle을 새로고침하고 `LibraryApplication`을 실행하세요.
+Java 17 / Gradle 프로젝트입니다. IntelliJ에서 `build.gradle`을 열고 Project SDK와 Gradle JVM을 Java 17로 설정한 뒤 Gradle을 새로고침하고 `ServerStudy2026Application`을 실행하세요.
 
 ## 이번 변경
 
@@ -147,7 +197,7 @@ ERD 파일: [library-erd.dbml](docs/library-erd.dbml)
 
 1. 이 폴더의 `build.gradle`을 Open → **Open as Project**로 엽니다.
 2. Project SDK와 Settings → Build Tools → Gradle → Gradle JVM을 **Java 17**로 설정합니다. 이 PC의 설치 경로는 `D:\Java\temurin-17\jdk-17.0.20.1+1`입니다.
-3. Gradle 동기화 후 `LibraryApplication.main()`을 실행합니다.
+3. Gradle 동기화 후 `ServerStudy2026Application.main()`을 실행합니다.
 4. [Swagger UI](http://localhost:8080/swagger-ui/index.html)를 엽니다.
 
 PowerShell에서는 Java 17을 `JAVA_HOME`에 설정하고 실행합니다.
