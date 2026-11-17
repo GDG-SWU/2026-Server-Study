@@ -62,3 +62,58 @@ jobs:
             build/libs/*.jar
             !build/libs/*-plain.jar
           if-no-files-found: error
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: deploy-beanstalk
+      cancel-in-progress: false
+
+    env:
+      AWS_REGION: ap-southeast-2
+      EB_APP: library-application
+      EB_ENV: library-application-env
+
+    steps:
+      - name: build 잡이 만든 jar 내려받기
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: deploy
+
+      - name: AWS 로그인
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 버전 라벨 만들기
+        run: echo "VERSION_LABEL=gha-${{ github.run_number }}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: S3 업로드 + 애플리케이션 버전 등록
+        run: |
+          JAR=$(ls deploy/*.jar | head -n 1)
+          BUCKET=$(aws elasticbeanstalk create-storage-location --query S3Bucket --output text)
+          KEY="$EB_APP/$VERSION_LABEL.jar"
+          aws s3 cp "$JAR" "s3://$BUCKET/$KEY"
+          aws elasticbeanstalk create-application-version \
+            --application-name "$EB_APP" \
+            --version-label "$VERSION_LABEL" \
+            --source-bundle S3Bucket="$BUCKET",S3Key="$KEY"
+
+      - name: 환경에 배포하고 기다리기
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENV" \
+            --version-label "$VERSION_LABEL"
+          aws elasticbeanstalk wait environment-updated --environment-names "$EB_ENV"
+
+      - name: 헬스 체크
+        run: |
+          curl --fail --silent --show-error \
+            --retry 10 --retry-delay 6 --retry-all-errors \
+            "http://${{ vars.EB_URL }}/health"
