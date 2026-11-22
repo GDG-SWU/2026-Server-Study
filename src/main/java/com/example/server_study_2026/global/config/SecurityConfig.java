@@ -47,7 +47,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/users/signup",
                                 "/users/login",
-                                "/health"
+                                "/health",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
 
                         // 도서 등록은 ADMIN만 가능
