@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  docker:
+    compose:
+      enabled: false
+
+server:
+  port: 5000
