@@ -36,8 +36,10 @@ public class SecurityConfig {
                         .requestMatchers("/students/signup", "/students/login").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/health").permitAll()
 
                         // ADMIN만 접근 가능
+
                         .requestMatchers(HttpMethod.POST, "/books").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/loans").hasRole("ADMIN")

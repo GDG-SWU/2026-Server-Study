@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${DB_URL} # 환경변수 -> 적어놓으면 털림, AWS에서 따로 설정할 예정
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update # 첫 배포 시 테이블이 없어 업데이트를 하기 위해, 나중에는 validate로
+    show-sql: false
+  docker:
+    compose:
+      enabled: false
+
+server:
+  port: 8080
+
