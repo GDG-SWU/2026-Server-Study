@@ -25,6 +25,12 @@ jobs:
 
       - name: 빌드 및 테스트
         run: ./gradlew clean build
+        env:
+          SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
   deploy:
     needs: build
@@ -52,7 +58,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2
+          aws-region: ap-southeast-2
 
       - name: Elastic Beanstalk 배포
         uses: einaregilsson/beanstalk-deploy@v22
@@ -62,7 +68,7 @@ jobs:
           application_name: library-app
           environment_name: Library-app-env
           version_label: gha-${{ github.run_number }}-${{ github.sha }}
-          region: ap-northeast-2
+          region: ap-southeast-2
           deployment_package: build/libs/Server_Study_2026-0.0.1-SNAPSHOT.jar
 
       - name: 배포 후 헬스 체크
