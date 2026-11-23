@@ -10,6 +10,16 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+  docker:
+    compose:
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
 
 jwt:
-  secret: test-jwt-secret-key-must-be-at-least-32-bytes-long-1234567890
+  secret: dGVzdC1qd3Qtc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTMyLWJ5dGVzLWxvbmctMTIzNDU2Nzg5MA==
+  expiration: 86400000
