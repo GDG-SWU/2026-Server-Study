@@ -1,0 +1,71 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: 빌드 및 테스트
+        run: ./gradlew clean build
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: JAR 빌드 (테스트 생략)
+        run: ./gradlew clean bootJar -x test
+
+      - name: AWS 자격 증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Elastic Beanstalk 배포
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: library-app
+          environment_name: Library-app-env
+          version_label: gha-${{ github.run_number }}-${{ github.sha }}
+          region: ap-northeast-2
+          deployment_package: build/libs/Server_Study_2026-0.0.1-SNAPSHOT.jar
+
+      - name: 배포 후 헬스 체크
+        run: |
+          sleep 15
+          curl -f http://${{ vars.EB_URL }}/health
