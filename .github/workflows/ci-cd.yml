@@ -1,0 +1,59 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-test-password   # 테스트 전용 임의 값
+          MYSQL_DATABASE: library                 # application.yml URL의 DB 이름
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_PASSWORD: ci-test-password               # 위 비밀번호와 같은 값
+
+    steps:
+      - name: 코드 내려받기
+        uses: actions/checkout@v4
+
+      - name: JDK 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'                      # build.gradle 자바 버전에 맞출 것
+
+      - name: gradlew 실행 권한
+        run: chmod +x gradlew
+
+      - name: 빌드 + 테스트
+        run: ./gradlew build
+
+      - name: 테스트 실패 시 리포트 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test
+
+      - name: 테스트 성공 시 jar 보관
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: |
+            build/libs/*.jar
+            !build/libs/*-plain.jar
