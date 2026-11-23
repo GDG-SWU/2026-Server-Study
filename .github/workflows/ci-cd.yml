@@ -26,11 +26,10 @@ jobs:
       - name: 빌드 및 테스트
         run: ./gradlew clean build
         env:
-          SPRING_PROFILES_ACTIVE: ${{ vars.SPRING_PROFILES_ACTIVE }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+          DB_USERNAME: sa
+          DB_PASSWORD: ""
+          JWT_SECRET: test-jwt-secret-key-must-be-at-least-32-bytes-long-1234567890
 
   deploy:
     needs: build
