@@ -212,7 +212,7 @@ class JwtSecurityTest extends ApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
-                .andExpect(jsonPath("$.data").value("ok"));
+                .andExpect(jsonPath("$.data").value("OK v2"));
         mvc.perform(get("/books")).andExpect(status().isUnauthorized());
     }
 

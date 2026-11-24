@@ -1,0 +1,36 @@
+{
+  "info": {
+    "name": "Week 07 - CI/CD 배포 전후 확인",
+    "description": "baseUrl에 기존 배포 서버 주소를 설정합니다. 자동 배포 전 첫 요청의 결과를 저장하고, 배포 후 같은 주소에서 두 번째 요청을 실행하세요. 도메인은 제출 캡처에서 가립니다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 배포 전 - 기존 서버 응답 캡처",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health", "auth": { "type": "noauth" } },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+        "pm.test('기존 배포 응답', () => {",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.success).to.eql(true);",
+        "  pm.expect(body.data).to.be.oneOf(['ok', 'OK']);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "02 배포 후 - OK v2 응답 캡처",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health", "auth": { "type": "noauth" } },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+        "pm.test('새 버전 응답', () => {",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.success).to.eql(true);",
+        "  pm.expect(body.data).to.eql('OK v2');",
+        "});"
+      ] } }]
+    }
+  ]
+}

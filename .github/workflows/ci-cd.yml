@@ -1,0 +1,163 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Grant Gradle execute permission
+        run: chmod +x gradlew
+
+      - name: Build and test
+        run: ./gradlew clean test bootJar --no-daemon
+
+      - name: Save test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Package deployment bundle
+        run: python scripts/package-deploy.py
+
+      - name: Save deployment bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: deployment-bundle
+          path: build/deploy.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository != 'GDG-SWU/2026-Server-Study' &&
+      vars.ENABLE_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EB_APPLICATION_NAME: ${{ vars.EB_APPLICATION_NAME }}
+      EB_ENVIRONMENT_NAME: ${{ vars.EB_ENVIRONMENT_NAME }}
+      EB_S3_BUCKET: ${{ vars.EB_S3_BUCKET }}
+      EB_URL: ${{ vars.EB_URL }}
+      EB_SCHEME: ${{ vars.EB_SCHEME || 'http' }}
+      VERSION_LABEL: gha-${{ github.run_number }}-${{ github.sha }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Validate deployment settings
+        shell: bash
+        env:
+          ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          for key in AWS_REGION EB_APPLICATION_NAME EB_ENVIRONMENT_NAME EB_S3_BUCKET EB_URL ACCESS_KEY SECRET_KEY; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error::Missing deployment setting: $key"
+              exit 1
+            fi
+          done
+          if [[ "$EB_URL" == *://* || "$EB_URL" == */* ]]; then
+            echo '::error::EB_URL must be a hostname without a scheme or path.'
+            exit 1
+          fi
+          if [[ "$EB_SCHEME" != http && "$EB_SCHEME" != https ]]; then
+            echo '::error::EB_SCHEME must be http or https.'
+            exit 1
+          fi
+          echo "::add-mask::$EB_URL"
+
+      - name: Download deployment bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: deployment-bundle
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload bundle to S3
+        run: |
+          aws s3 cp deploy.zip \
+            "s3://${EB_S3_BUCKET}/deployments/${VERSION_LABEL}.zip" \
+            --only-show-errors
+
+      - name: Register application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "$EB_APPLICATION_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --source-bundle "S3Bucket=${EB_S3_BUCKET},S3Key=deployments/${VERSION_LABEL}.zip" \
+            --query 'ApplicationVersion.VersionLabel' --output text
+
+      - name: Deploy application version
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENVIRONMENT_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --query 'VersionLabel' --output text
+
+      - name: Wait for deployment
+        run: |
+          aws elasticbeanstalk wait environment-updated \
+            --environment-names "$EB_ENVIRONMENT_NAME"
+
+      - name: Verify deployed version
+        shell: bash
+        run: |
+          actual=$(aws elasticbeanstalk describe-environments \
+            --environment-names "$EB_ENVIRONMENT_NAME" \
+            --query 'Environments[0].VersionLabel' --output text)
+          if [[ "$actual" != "$VERSION_LABEL" ]]; then
+            echo '::error::The environment is not running the requested version.'
+            exit 1
+          fi
+
+      - name: Health check
+        shell: bash
+        run: |
+          for attempt in {1..24}; do
+            if curl --fail --silent --show-error \
+              --connect-timeout 5 --max-time 10 \
+              "${EB_SCHEME}://${EB_URL}/health" -o health.json; then
+              if python -c 'import json; r=json.load(open("health.json")); assert r.get("success") is True and r.get("data") == "OK v2"'; then
+                echo 'Health check passed: OK v2'
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo '::error::Health check did not return the expected OK v2 response.'
+          exit 1
