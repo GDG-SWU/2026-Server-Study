@@ -1,0 +1,68 @@
+{
+  "id": 45350456323,
+  "event": "pull_request",
+  "head_branch": "codex/ci-test",
+  "head_sha": "5bfd2c580934dc1601d30949d099eed389ac80b6",
+  "status": "completed",
+  "conclusion": "failure",
+  "html_url": "https://github.com/sua710/server-cicd/actions/runs/45350456323",
+  "jobs": [
+    {
+      "name": "build",
+      "conclusion": "failure",
+      "html_url": "https://github.com/sua710/server-cicd/actions/runs/45350456323/job/138295285630",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Java 17",
+          "conclusion": "success"
+        },
+        {
+          "name": "Grant Gradle execute permission",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build and test",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Save test reports",
+          "conclusion": "success"
+        },
+        {
+          "name": "Package deployment bundle",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Save deployment bundle",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Set up Java 17",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/sua710/server-cicd/actions/runs/45350456323/job/138295704869",
+      "steps": []
+    }
+  ]
+}

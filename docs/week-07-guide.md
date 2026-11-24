@@ -1,5 +1,9 @@
 # 7주차 CI/CD 과제 — 준비한 내용과 남은 작업
 
+> 개인 저장소 push와 PR 실습을 진행했습니다. 실제 실행 링크는
+> [CI 실습 기록](week-07-ci-results.md)과 개인 PR #1 본문을 확인하세요.
+> 아래 Git 명령은 실습 재현용이므로 이미 완료한 단계는 다시 실행하지 않습니다.
+
 ## 로컬에서 준비한 내용
 
 - 작업 브랜치: `week-07/sua`.
@@ -18,7 +22,8 @@
 
 새 비공개 저장소 [sua710/server-cicd](https://github.com/sua710/server-cicd)를 생성하고
 `personal` 원격으로 연결했습니다. 프로필 저장소 sua710/sua710은 사용하지 않았습니다.
-`origin`은 기존 동아리 저장소 그대로입니다. 원격 push는 아직 실행하지 않았습니다.
+`origin`은 기존 동아리 저장소 그대로입니다. 사용자 승인 후 personal의 main 및
+codex/ci-test 브랜치에 push했습니다. 동아리 origin에는 push하지 않았습니다.
 
 ```powershell
 git remote -v

@@ -1,0 +1,4 @@
+2026-11-24T07:46:08.9633952Z JwtSecurityTest > healthIsPublicAndUsesCommonResponse() FAILED
+2026-11-24T07:46:08.9650953Z     java.lang.AssertionError at JwtSecurityTest.java:215
+2026-11-24T07:46:17.7566654Z 31 tests completed, 1 failed
+2026-11-24T07:46:17.7737745Z BUILD FAILED in 36s
