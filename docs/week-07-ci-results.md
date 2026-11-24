@@ -2,14 +2,14 @@
 
 - 저장소: [sua710/server-cicd](https://github.com/sua710/server-cicd)
 - 실습 PR: [#1 CI 성공·실패·복구](https://github.com/sua710/server-cicd/pull/1)
-- 원격 push 대상은 personal뿐이며 동아리 origin에는 push하지 않았습니다.
+- 개인 CI 실습은 personal 원격에서 수행했습니다. 동아리 제출 대상은 origin의 `week-07/sua`이며 main에는 병합하지 않습니다.
 
 | 단계 | 실제 실행 기록 | 결과 |
 | --- | --- | --- |
 | 첫 main push | [Actions 실행](https://github.com/sua710/server-cicd/actions/runs/45350007233) | build 성공, deploy 건너뜀 |
 | 최초 PR | [성공 실행](https://github.com/sua710/server-cicd/actions/runs/45350200282) | build 성공, deploy 건너뜀 |
 | 의도적인 실패 | [실패 실행](https://github.com/sua710/server-cicd/actions/runs/45350456323) | 전체 31개 중 health 테스트 1개 실패 |
-| 복구 | [같은 PR의 최신 Checks](https://github.com/sua710/server-cicd/pull/1/checks) | 기대값을 OK v2로 복구, 최종 실행 링크는 PR 본문 참고 |
+| 복구 | [복구 성공 실행](https://github.com/sua710/server-cicd/actions/runs/45350769074) | 기대값 OK v2로 복구, 31개 통과·실패 0개 |
 
 실패 실습은 API 동작을 바꾸지 않고 JwtSecurityTest의 health 기대값만
 `OK v2` → `INTENTIONAL_CI_FAILURE`로 변경했습니다.

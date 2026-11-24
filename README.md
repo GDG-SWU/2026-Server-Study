@@ -1,3 +1,53 @@
+# Week 07 — GitHub Actions CI/CD 자동화
+
+제출 브랜치는 `week-07/sua`입니다. 동아리 `week-07/sebin`의 디렉터리 구성을 확인했으며,
+`src/main/java`의 전체 Java 파일 경로와 `.github/workflows/ci-cd.yml` 위치가 동일합니다.
+Java 17 / Gradle 프로젝트로 IntelliJ에서 열 수 있으며 기존 학습 코드와 문서를 유지합니다.
+
+```text
+.github/workflows/ci-cd.yml
+build.gradle
+compose.yaml
+gradle/wrapper/
+gradlew
+gradlew.bat
+settings.gradle
+src/main/java/com/example/server_study_2026/
+├── api/          # controller와 DTO
+├── domain/       # entity와 repository
+├── service/      # 비즈니스 로직
+└── global/       # 공통 응답·예외·보안·health
+src/main/resources/
+src/test/java/
+```
+
+- `build`: Java 17에서 테스트 및 bootJar 생성, 테스트 보고서와 배포 ZIP 보관.
+- `deploy`: build의 ZIP을 받아 Beanstalk에 버전 등록·배포·상태 확인.
+- `GET /health`: 공개 API, 성공 응답의 `data`는 `"OK v2"`.
+- 개인 저장소에서 같은 PR의 CI 성공 → 의도적인 테스트 실패 → 복구 성공을 확인했습니다.
+- 복구 실행의 GitHub JUnit 보고서에서 테스트 **31개 통과**, 실패·오류·건너뜀 **0개**를 확인했습니다.
+- 현재 테스트는 정상으로 복구되어 있으며 AWS 인증·환경 설정과 실제 배포 검증은 남아 있습니다.
+- 동아리 저장소에서는 배포를 실행하지 않으며, 개인 저장소도 `ENABLE_DEPLOY=true`일 때만 main push 배포를 실행합니다.
+
+검증 및 배포 파일 생성:
+
+```powershell
+.\gradlew.bat clean test bootJar
+python scripts/package-deploy.py
+```
+
+결과물은 `build/deploy.zip`이며 최상위에 `app.jar`와 `Procfile`이 들어갑니다.
+IntelliJ의 Project SDK와 Gradle JVM은 Java 17로 설정합니다.
+
+- [개인 실습 PR](https://github.com/sua710/server-cicd/pull/1)
+- [CI 실행 결과](docs/week-07-ci-results.md)
+- [실습·배포·제출 안내](docs/week-07-guide.md)
+- [Postman 컬렉션](docs/postman/week-07-cicd.postman_collection.json)
+
+아래는 이전 주차 기록입니다. 현재 health 응답과 CI/CD 실행 절차는 위 7주차 안내를 기준으로 확인하세요.
+
+---
+
 # Week 06 — 운영 설정과 상태 확인
 
 `week-06/sebin`의 전체 운영 Java 파일 경로와 추가 파일 구성을 반영했습니다.

@@ -23,7 +23,8 @@
 새 비공개 저장소 [sua710/server-cicd](https://github.com/sua710/server-cicd)를 생성하고
 `personal` 원격으로 연결했습니다. 프로필 저장소 sua710/sua710은 사용하지 않았습니다.
 `origin`은 기존 동아리 저장소 그대로입니다. 사용자 승인 후 personal의 main 및
-codex/ci-test 브랜치에 push했습니다. 동아리 origin에는 push하지 않았습니다.
+codex/ci-test 브랜치에 push했습니다. 동아리 제출은 별도 요청에 따라 origin의
+week-07/sua를 사용하며 main에는 병합하지 않습니다.
 
 ```powershell
 git remote -v

@@ -15,7 +15,7 @@ Follow AGENTS.md for repository preferences and remote push authorization.
 .\gradlew.bat bootRun --args='--spring.profiles.active=dev'
 ```
 
-Work uses weekly branches such as `week-06/sua`.
+Work uses weekly branches such as `week-07/sua`.
 Creating a branch or commit does not authorize a remote push.
 
 ## Environment and profiles
@@ -29,12 +29,12 @@ Creating a branch or commit does not authorize a remote push.
 - `prod` uses `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, port 5000, SQL logging off,
   and Docker Compose integration disabled. Activate with `--spring.profiles.active=prod`.
 - JWT HMAC keys must contain at least 32 UTF-8 bytes.
-- `GET /health` is public and returns an `ApiResponse` containing `"ok"`.
+- `GET /health` is public and returns an `ApiResponse` containing `"OK v2"`.
 
 ## Structure
 
 Package root is `com.example.server_study_2026`.
-Main Java file paths follow `week-06/sebin`.
+Main Java file paths match `week-07/sebin`; CI/CD lives at `.github/workflows/ci-cd.yml`.
 
 - `api/<feature>` contains controllers and `dto` request/response records.
 - `service/<feature>` contains transactional business logic.
