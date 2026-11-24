@@ -185,4 +185,4 @@ Health check는 HTTP 성공뿐 아니라 JSON의 success=true, data=OK v2까지 
 - https://github.com/aws-actions/configure-aws-credentials
 - https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/java-se-procfile.html
 
-실습 메모: 개인 PR을 만들 때 이 줄에 본인의 확인 내용을 추가하세요.
+실습 메모: 개인 저장소 sua710/server-cicd에서 같은 PR의 CI 성공 → 실패 → 복구를 확인합니다.
